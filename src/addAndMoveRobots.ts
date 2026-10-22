@@ -1,13 +1,13 @@
 import type { MarsGrid, Position } from './mars/marsGrid.ts'
 
-export interface RobotInput {
+export interface RobotOrders {
   startPosition: Position
   instructionString: string
 }
 
 // Robots are added to the grid and moved in order, one robot at a time.
-export function addAndMoveRobots(grid: MarsGrid, robots: RobotInput[]): void {
-  for (const { startPosition, instructionString } of robots) {
+export function addAndMoveRobots(grid: MarsGrid, robotOrders: RobotOrders[]): void {
+  for (const { startPosition, instructionString } of robotOrders) {
     const robotId = grid.addRobot(startPosition)
     processInstructionString(grid, robotId, instructionString)
   }

@@ -1,9 +1,9 @@
 import type { GridSize, Orientation, Position } from '../mars/marsGrid.ts'
-import type { RobotInput } from '../addAndMoveRobots.ts'
+import type { RobotOrders } from '../addAndMoveRobots.ts'
 
 export interface MissionInput {
   gridSize: GridSize
-  robots: RobotInput[]
+  robotOrders: RobotOrders[]
 }
 
 const GRID_LINE = /^(\d+)\s+(\d+)$/
@@ -18,13 +18,13 @@ export function parseInput(text: string): MissionInput {
     .filter(line => line !== '')
 
   const gridSize = parseGridLine(gridLine)
-  const robots: RobotInput[] = []
+  const robotOrders: RobotOrders[] = []
 
   for (const line of robotLines) {
     if (isPositionLine(line)) {
-      robots.push({ startPosition: parsePositionLine(line), instructionString: '' })
+      robotOrders.push({ startPosition: parsePositionLine(line), instructionString: '' })
     } else {
-      const robot = robots.at(-1)
+      const robot = robotOrders.at(-1)
       if (!robot || robot.instructionString !== '') {
         throw new Error(`Unexpected line: ${line}`)
       }
@@ -32,7 +32,7 @@ export function parseInput(text: string): MissionInput {
     }
   }
 
-  return { gridSize, robots }
+  return { gridSize, robotOrders }
 }
 
 function parseGridLine(line: string | undefined): GridSize {

@@ -9,7 +9,7 @@ if (!inputFile) {
   process.exit(1)
 }
 
-const { gridSize, robots } = parseInput(readFileSync(inputFile, 'utf8'))
+const { gridSize, robotOrders } = parseInput(readFileSync(inputFile, 'utf8'))
 const grid = new MarsGrid(gridSize)
-addAndMoveRobots(grid, robots)
+addAndMoveRobots(grid, robotOrders)
 console.log(grid.reportRobots())
