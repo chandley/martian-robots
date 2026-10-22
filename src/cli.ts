@@ -11,4 +11,5 @@ if (!inputFile) {
 
 const { gridSize, robots } = parseInput(readFileSync(inputFile, 'utf8'))
 const grid = new MarsGrid(gridSize)
-console.log(addAndMoveRobots(grid, robots))
+addAndMoveRobots(grid, robots)
+console.log(grid.reportRobots())

@@ -5,13 +5,12 @@ export interface RobotInput {
   instructionString: string
 }
 
-// Robots are added and run in order on the given grid, then reported together.
-export function addAndMoveRobots(grid: MarsGrid, robots: RobotInput[]): string {
+// Robots are added to the grid and moved in order, one robot at a time.
+export function addAndMoveRobots(grid: MarsGrid, robots: RobotInput[]): void {
   for (const { startPosition, instructionString } of robots) {
     const robotId = grid.addRobot(startPosition)
     processInstructionString(grid, robotId, instructionString)
   }
-  return grid.reportRobots()
 }
 
 function processInstructionString(grid: MarsGrid, robotId: number, instructionString: string): void {
