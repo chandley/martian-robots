@@ -46,6 +46,9 @@ export class MarsGrid {
 
   processInstruction(robotId: number, instruction: string): void {
     const robot = this.findRobot(robotId)
+    if (robot.status === 'lost') {
+      return
+    }
     const next = this.nextPosition(robot.position, instruction)
     if (this.isOnGrid(next)) {
       robot.position = next
