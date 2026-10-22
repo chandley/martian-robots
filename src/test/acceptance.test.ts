@@ -13,5 +13,9 @@ function runMartianRobots(inputFile: string): string {
 }
 
 test('smallgrid: a robot with no instructions reports its start position', () => {
-  assert.equal(runMartianRobots('examples/smallgrid.txt'), '0 0 N\n')
+  assert.equal(runMartianRobots('examples/smallstill.txt'), '0 0 N\n')
+})
+
+test('smallgrid: a robot rotates in place', () => {
+  assert.equal(runMartianRobots('examples/smallrotate.txt'), '0 0 W\n')
 })
