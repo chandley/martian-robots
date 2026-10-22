@@ -1,4 +1,4 @@
-# Martian Robots: brief review and modelling plan
+    # Martian Robots: brief review and modelling plan
 
 Status: agreed 2026-10-22, revised 09:45 (robot state, processInstruction, log). No code yet.
 Stack: Node + TypeScript, backend modules only. Animation is out of scope for now.
@@ -175,7 +175,7 @@ src/
   io/
     parseInput.ts                text -> { maxX, maxY, robots: { start, instructionString }[] }, or throw InputError(line, message)
   cli.ts                         main loop above
-  test/                          Jest tests, written before the implementation
+  test/                          node:test tests, written before the implementation
 docs/
   CHALLENGE.md
   modelling-plan.md              this plan
@@ -187,7 +187,7 @@ README.md                        how to run and test, plus every assumption from
 ## 4. Development cycle (based on Shut the Box)
 
 1. **Agree on the model.** Done. The plan is in `docs/modelling-plan.md`.
-2. **Scaffold.** `package.json`, TypeScript and Jest (ts-jest, or Babel as in Shut the Box), with `npm test` and `npm start < sample.txt`. I'll ask before adding any config.
+2. **Scaffold.** See `docs/project-plan.md`: TypeScript run directly by Node 24, tests with `node --test`, run as `node martian-robots <file>`. I'll ask before adding any config.
 3. **Test-first, hardest part first**, one commit point per step:
    1. `orientation`: turning and moving forward
    2. `instructions`: L, R and F as position-to-position functions
