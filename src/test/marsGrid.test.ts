@@ -57,7 +57,7 @@ test('2x2 grid: LF rotates and moves a robot', () => {
 
 
 test('2x2 grid: show three robots', () => {
-  const grid = new MarsGrid(0, 0)
+  const grid = new MarsGrid(1, 1)
   grid.addRobot({ x: 0, y: 0, orientation: 'N' })
   grid.addRobot({ x: 1, y: 0, orientation: 'N' })
   grid.addRobot({ x: 1, y: 1, orientation: 'N' })

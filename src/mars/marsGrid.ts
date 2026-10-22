@@ -16,6 +16,8 @@ interface Robot {
 
 const LEFT_OF: Record<Orientation, Orientation> = { N: 'W', W: 'S', S: 'E', E: 'N' }
 
+const RIGHT_OF: Record<Orientation, Orientation> = { N: 'E', E: 'S', S: 'W', W: 'N' }
+
 const FORWARD_STEP: Record<Orientation, { dx: number; dy: number }> = {
   N: { dx: 0, dy: 1 },
   E: { dx: 1, dy: 0 },
@@ -60,6 +62,8 @@ export class MarsGrid {
     switch (instruction) {
       case 'L':
         return { ...position, orientation: LEFT_OF[position.orientation] }
+      case 'R':
+        return { ...position, orientation: RIGHT_OF[position.orientation] }
       case 'F': {
         const { dx, dy } = FORWARD_STEP[position.orientation]
         return { ...position, x: position.x + dx, y: position.y + dy }

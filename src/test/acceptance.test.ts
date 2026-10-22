@@ -24,4 +24,8 @@ test('two by two grid: a robot rotates in place and moves', () => {
   assert.equal(runMartianRobots('examples/twobytwo.txt'), '0 1 W\n')
 })
 
+test('two by two grid: show three robots with moves', () => {
+  assert.equal(runMartianRobots('examples/twobytwo3robots.txt'), '0 1 W\n0 0 E\n1 0 S\n')
+})
+
 
