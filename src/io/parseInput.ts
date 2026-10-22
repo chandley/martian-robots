@@ -1,13 +1,8 @@
-import type { Orientation, Position } from '../mars/marsGrid.ts'
-
-export interface RobotInput {
-  start: Position
-  instructionString: string
-}
+import type { GridSize, Orientation, Position } from '../mars/marsGrid.ts'
+import type { RobotInput } from '../addAndMoveRobots.ts'
 
 export interface MissionInput {
-  maxX: number
-  maxY: number
+  gridSize: GridSize
   robots: RobotInput[]
 }
 
@@ -22,12 +17,12 @@ export function parseInput(text: string): MissionInput {
     .map(line => line.trim())
     .filter(line => line !== '')
 
-  const { maxX, maxY } = parseGridLine(gridLine)
+  const gridSize = parseGridLine(gridLine)
   const robots: RobotInput[] = []
 
   for (const line of robotLines) {
     if (isPositionLine(line)) {
-      robots.push({ start: parsePositionLine(line), instructionString: '' })
+      robots.push({ startPosition: parsePositionLine(line), instructionString: '' })
     } else {
       const robot = robots.at(-1)
       if (!robot || robot.instructionString !== '') {
@@ -37,10 +32,10 @@ export function parseInput(text: string): MissionInput {
     }
   }
 
-  return { maxX, maxY, robots }
+  return { gridSize, robots }
 }
 
-function parseGridLine(line: string | undefined): { maxX: number; maxY: number } {
+function parseGridLine(line: string | undefined): GridSize {
   const match = line?.match(GRID_LINE)
   if (!match) {
     throw new Error(`Expected a grid line like "5 3", got: ${line ?? 'nothing'}`)

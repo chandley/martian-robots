@@ -8,6 +8,11 @@ export interface Position {
   orientation: Orientation
 }
 
+export interface GridSize {
+  maxX: number
+  maxY: number
+}
+
 interface Robot {
   id: number
   position: Position
@@ -26,13 +31,11 @@ const FORWARD_STEP: Record<Orientation, { dx: number; dy: number }> = {
 }
 
 export class MarsGrid {
-  private readonly maxX: number
-  private readonly maxY: number
+  private readonly gridSize: GridSize
   private robots: Robot[] = []
 
-  constructor(maxX: number, maxY: number) {
-    this.maxX = maxX
-    this.maxY = maxY
+  constructor(gridSize: GridSize) {
+    this.gridSize = gridSize
   }
 
   addRobot(start: Position): number {
@@ -74,7 +77,8 @@ export class MarsGrid {
   }
 
   private isOnGrid({ x, y }: Position): boolean {
-    return x >= 0 && x <= this.maxX && y >= 0 && y <= this.maxY
+    const { maxX, maxY } = this.gridSize
+    return x >= 0 && x <= maxX && y >= 0 && y <= maxY
   }
 
   private findRobot(robotId: number): Robot {
