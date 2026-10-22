@@ -19,3 +19,9 @@ test('smallgrid: a robot with no instructions reports its start position', () =>
 test('smallgrid: a robot rotates in place', () => {
   assert.equal(runMartianRobots('examples/smallrotate.txt'), '0 0 W\n')
 })
+
+test('two by two grid: a robot rotates in place', () => {
+  assert.equal(runMartianRobots('examples/smallrotate.txt'), '1 1 W\n')
+})
+
+
