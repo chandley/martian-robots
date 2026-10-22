@@ -29,3 +29,11 @@ test('two by two grid: show three robots with moves', () => {
 })
 
 
+
+test('one by one grid: a scent saves the next robot, but only for the same move', () => {
+  assert.equal(runMartianRobots('examples/onebyonescents.txt'), '0 0 N LOST\n0 0 N\n0 0 W LOST\n')
+})
+
+test('the sample from CHALLENGE.md', () => {
+  assert.equal(runMartianRobots('examples/sample.txt'), '1 1 E\n3 3 N LOST\n2 3 S\n')
+})

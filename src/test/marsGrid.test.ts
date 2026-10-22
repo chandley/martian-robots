@@ -86,3 +86,76 @@ test('a lost robot ignores later instructions, even a move that would be valid f
 
   assert.equal(grid.reportRobots(), '1 1 N LOST')
 })
+
+// Scents: a lost robot leaves a scent of its last position and the instruction that took it off the grid.
+
+test('scent: a later robot ignores the same move from the same position', () => {
+  const grid = new MarsGrid({ maxX: 0, maxY: 0 })
+  const first = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(first, 'F')
+
+  const second = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(second, 'F')
+
+  assert.equal(grid.reportRobots(), '0 0 N LOST\n0 0 N')
+})
+
+test('scent: the saved robot carries on with its next instruction', () => {
+  const grid = new MarsGrid({ maxX: 0, maxY: 0 })
+  const first = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(first, 'F')
+
+  const second = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(second, 'F')
+  grid.processInstruction(second, 'R')
+
+  assert.equal(grid.reportRobots(), '0 0 N LOST\n0 0 E')
+})
+
+test('scent: only applies to the orientation it was left with', () => {
+  const grid = new MarsGrid({ maxX: 0, maxY: 0 })
+  const first = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(first, 'F')
+
+  const second = grid.addRobot({ x: 0, y: 0, orientation: 'E' })
+  grid.processInstruction(second, 'F')
+
+  assert.equal(grid.reportRobots(), '0 0 N LOST\n0 0 E LOST')
+})
+
+test('scent: one square can hold scents for more than one orientation', () => {
+  const grid = new MarsGrid({ maxX: 0, maxY: 0 })
+  for (const orientation of ['N', 'E'] as const) {
+    const lost = grid.addRobot({ x: 0, y: 0, orientation })
+    grid.processInstruction(lost, 'F')
+  }
+
+  for (const orientation of ['N', 'E'] as const) {
+    const saved = grid.addRobot({ x: 0, y: 0, orientation })
+    grid.processInstruction(saved, 'F')
+  }
+
+  assert.equal(grid.reportRobots(), '0 0 N LOST\n0 0 E LOST\n0 0 N\n0 0 E')
+})
+
+test('scent: only applies to the square it was left on', () => {
+  const grid = new MarsGrid({ maxX: 1, maxY: 1 })
+  const first = grid.addRobot({ x: 0, y: 1, orientation: 'N' })
+  grid.processInstruction(first, 'F')
+
+  const second = grid.addRobot({ x: 1, y: 1, orientation: 'N' })
+  grid.processInstruction(second, 'F')
+
+  assert.equal(grid.reportRobots(), '0 1 N LOST\n1 1 N LOST')
+})
+
+test('scent: does not block a turn on the scented square', () => {
+  const grid = new MarsGrid({ maxX: 0, maxY: 0 })
+  const first = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(first, 'F')
+
+  const second = grid.addRobot({ x: 0, y: 0, orientation: 'N' })
+  grid.processInstruction(second, 'L')
+
+  assert.equal(grid.reportRobots(), '0 0 N LOST\n0 0 W')
+})
