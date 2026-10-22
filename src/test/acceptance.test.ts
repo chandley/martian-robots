@@ -20,8 +20,8 @@ test('smallgrid: a robot rotates in place', () => {
   assert.equal(runMartianRobots('examples/smallrotate.txt'), '0 0 W\n')
 })
 
-test('two by two grid: a robot rotates in place', () => {
-  assert.equal(runMartianRobots('examples/smallrotate.txt'), '1 1 W\n')
+test('two by two grid: a robot rotates in place and moves', () => {
+  assert.equal(runMartianRobots('examples/twobytwo.txt'), '0 1 W\n')
 })
 
 

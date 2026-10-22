@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs'
-import { MarsGrid } from './mars/marsGrid.ts'
+import { MarsGrid, type Orientation } from './mars/marsGrid.ts'
 
-// The grid size and robot start are still hard-coded in MarsGrid,
-// so only the first robot's instruction line (line 3) is read from the file.
+// Reads the grid and a single robot for now; validation comes with parseInput later.
 const inputFile = process.argv[2]
 if (!inputFile) {
   console.error('Usage: node martian-robots <input-file>')
@@ -10,10 +9,13 @@ if (!inputFile) {
 }
 
 const lines = readFileSync(inputFile, 'utf8').split('\n')
+const [maxX, maxY] = lines[0].trim().split(/\s+/).map(Number)
+const [x, y, orientation] = lines[1].trim().split(/\s+/)
 const instructionString = lines[2]?.trim() ?? ''
 
-const grid = new MarsGrid()
+const grid = new MarsGrid(maxX, maxY)
+const robotId = grid.addRobot({ x: Number(x), y: Number(y), orientation: orientation as Orientation })
 for (const instruction of instructionString) {
-  grid.processInstruction(1, instruction)
+  grid.processInstruction(robotId, instruction)
 }
 console.log(grid.reportRobots())
