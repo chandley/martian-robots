@@ -1,6 +1,6 @@
 # Martian Robots: brief review and modelling plan
 
-Status: agreed 2026-10-22. No code yet.
+Status: agreed 2026-10-22, revised 09:45 (robot state, processInstruction, log). No code yet.
 Stack: Node + TypeScript, backend modules only. Animation is out of scope for now.
 
 ---
@@ -40,14 +40,14 @@ The sample exercises both the scent rule and "a lost robot stops processing". It
 | A8 | Smallest grid | `0 0` (a single square) is valid. Negative values are rejected. | Yes |
 | A9 | Empty instruction line | Allowed. The robot just reports its start position. | Yes (your call) |
 | A10 | Does a robot sitting on a scent change anything? | No. A scent only blocks the **same instruction from the same orientation** on that square. | Yes |
-| A11 | Lost robots on the grid | A lost robot leaves the grid. Only its scent stays. | Yes |
+| A11 | Lost robots on the grid | A lost robot stays on record (for the report) at its last valid position. It doesn't affect other robots. Only its scent does. | Yes |
 | A12 | Whitespace and blank lines | Blank lines between robots and extra spaces are tolerated. | Yes |
 
 ---
 
 ## 2. Domain model
 
-*Revised 09:10. Your renames are in, the steps for animation are dropped in favour of a simple `moveLog`, and `MarsGrid.reportRobots()` produces the output.*
+*Revised 09:45. Robot only holds its state. MarsGrid processes one instruction at a time and returns a log entry. A separate `processInstructionString` feeds instructions in and collects the log.*
 
 These terms come from the brief, so code, tests and docs all use the same words. That's the same idea as the Shut the Box naming rules.
 
@@ -57,10 +57,12 @@ These terms come from the brief, so code, tests and docs all use the same words.
 | `Location` | `{ x, y }`, a square on the grid |
 | `Orientation` | `'N' \| 'E' \| 'S' \| 'W'` |
 | `Position` | **Location + Orientation**: `{ x, y, orientation }`, the brief's "robot position" |
+| `Status` | `'active' \| 'lost'` |
 | `Instruction` | A single letter: `'L'`, `'R'`, `'F'` (later perhaps `'J'`) |
 | `instructionString` | The whole instruction line for one robot, e.g. `"FRRFLLFFRRFLL"` |
 | `Scent` | `{ x, y, orientation, instruction }`, the position and instruction that took a robot off the grid |
-| `moveLog` | A robot's positions in order (start, then after each instruction it carried out), so you can look at what happened. It's for debugging and tests, not animation. |
+| `Result` | What one instruction did: `'moved' \| 'ignored' \| 'lost'`. A turn counts as `moved`. |
+| `LogEntry` | One line of the move log: robot id, instruction, result, and the robot's position and status afterwards |
 
 ### Instruction set
 ```ts
@@ -76,39 +78,86 @@ const instructionSet: InstructionSet = {
 - Each instruction is a pure `Position → Position` function. The new position **may be off the grid**, and the function doesn't care.
 - Adding an instruction means adding one entry plus its tests. The parser checks letters against the set's keys, so the list of valid letters lives in one place.
 
-### Robot
+### Robot: state only
 ```ts
 interface Robot {
-  position: Position        // last valid position
-  lost: boolean
-  moveLog: Position[]
+  id: number               // 1, 2, 3… in the order the robots were added
+  position: Position       // last valid position
+  status: Status
 }
 ```
+The robot doesn't know about instruction strings or the log.
 
 ### MarsGrid
 ```ts
 class MarsGrid {
   constructor(maxX: number, maxY: number)
-  addRobot(start: Position, instructionString: string): void   // runs the robot straight away (robots are processed in order)
-  reportRobots(): string                                        // "1 1 E\n3 3 N LOST\n2 3 S"
+  addRobot(start: Position): number                                // places the robot, returns its id
+  processInstruction(robotId: number, instruction: Instruction): LogEntry
+  reportRobots(): string                                           // "1 1 E\n3 3 N LOST\n2 3 S"
 }
 ```
-- It holds the bounds, the scents (any number per square), and the robots in the order they were added (more than one per square is allowed).
-- `reportRobots()` builds each robot's line from its final position and `lost` flag. Any result type stays private to the function.
+- It holds the bounds, the scents (any number per square), and every robot in the order added, lost ones included, so they can be reported. More than one robot per square is allowed.
+- **The core rule lives in `processInstruction`**:
+  1. **Scent check.** If there's a scent for (robot's position, instruction), the result is `ignored`.
+  2. Otherwise `next = instructionSet[instruction](position)`.
+  3. If `next` is on the grid, the robot takes that position. The result is `moved`.
+  4. If it's off the grid, add the scent (position, instruction), set the status to `lost`, and keep the last valid position. The result is `lost`.
+- Calling `processInstruction` for a robot that's already lost is a programming error, so it throws. `processInstructionString` never does it.
+- `reportRobots()` gives one line per robot, in order: `x y O`, plus ` LOST` if lost.
 
-### The core rule, in one place (private to MarsGrid)
-For each instruction in the `instructionString`, while the robot isn't lost:
-1. **Scent check.** If there's a scent for (position, instruction), skip the instruction.
-2. Otherwise `next = instructionSet[instruction](position)`.
-3. If `next` is on the grid, the robot takes that position (a move or a turn) and `next` is appended to its `moveLog`.
-4. If it's off the grid, add the scent (position, instruction), mark the robot `lost`, and **stop**. Its position stays at the last valid square.
+### LogEntry
+```ts
+interface LogEntry {
+  robotId: number; instruction: Instruction; result: Result
+  position: Position; status: Status                 // after the instruction
+}
+formatLogEntry(entry) // "robot id:3 instruction:F result:lost coordinates:0 0 orientation:W status:lost"
+```
+It's an object rather than a ready-made string, so `processInstructionString` can see the status and stop, and tests can assert on fields. `formatLogEntry` gives the text line.
 
-That's one scent check and one grid check, in order, in one place. Turns can never leave the grid, so they never leave scents, but they go through the same path. It's the "hardest problem", so it gets tested first.
+### processInstructionString (outside MarsGrid)
+```ts
+function processInstructionString(grid: MarsGrid, robotId: number, instructionString: string): LogEntry[]
+```
+It feeds the instructions one at a time to `grid.processInstruction`, collects each `LogEntry` into the move log, and **stops after a `lost` result**, so the rest of the string is skipped. An empty string returns an empty log.
+
+### Main flow (cli)
+```
+parse input → new MarsGrid(maxX, maxY)
+for each robot in order:
+    id  = grid.addRobot(start)
+    log = processInstructionString(grid, id, instructionString)   // optional: the main loop may print it as a log (not a core requirement)
+print grid.reportRobots()
+```
+
+### Worked example: a 1x1 grid
+Input (the grid line `0 0` is a 1x1 grid):
+```
+0 0
+0 0 N
+F
+0 0 N
+F
+0 0 N
+LF
+```
+Move log:
+```
+robot id:1 instruction:F result:lost coordinates:0 0 orientation:N status:lost
+robot id:2 instruction:F result:ignored coordinates:0 0 orientation:N status:active
+robot id:3 instruction:L result:moved coordinates:0 0 orientation:W status:active
+robot id:3 instruction:F result:lost coordinates:0 0 orientation:W status:lost
+```
+Output:
+```
+0 0 N LOST
+0 0 N
+0 0 W LOST
+```
+This one example covers getting lost, a scent blocking a later robot, a turn going through the same path as a move, two scents on one square (N+F and W+F), and the rest of the instructions being skipped after a robot is lost. It becomes an acceptance test alongside the brief's sample.
 
 Assumption for the README: a robot lost by a multi-square move such as `J` is reported at the square where that instruction **started**.
-
-### Later: animation
-This is out of scope for now. If a frontend comes later, the `moveLog` is a natural starting point.
 
 ---
 
@@ -117,42 +166,44 @@ This is out of scope for now. If a frontend comes later, the `moveLog` is a natu
 ```
 src/
   mars/
-    orientation.ts     turnLeft, turnRight, moveForward(position, distance)
-    instructions.ts    Instruction, InstructionSet, instructionSet (L, R, F)
-    marsGrid.ts        MarsGrid: bounds, scents, robots, the core rule, addRobot, reportRobots
-    limits.ts          MAX_COORDINATE = 50, MAX_INSTRUCTION_LENGTH = 100, MAX_ROBOTS = 1000
+    orientation.ts               turnLeft, turnRight, moveForward(position, distance)
+    instructions.ts              Instruction, InstructionSet, instructionSet (L, R, F)
+    marsGrid.ts                  MarsGrid: bounds, scents, robots; addRobot, processInstruction (core rule), reportRobots
+    logEntry.ts                  LogEntry, formatLogEntry
+    processInstructionString.ts  feeds one robot's instructions to the grid, returns LogEntry[]
+    limits.ts                    MAX_COORDINATE = 50, MAX_INSTRUCTION_LENGTH = 100, MAX_ROBOTS = 1000
   io/
-    parseInput.ts      text -> { maxX, maxY, robots: { start, instructionString }[] }, or throw InputError(line, message)
-  cli.ts               reads a file argument or stdin, parses it, adds each robot to a MarsGrid, prints reportRobots()
-  test/                Jest tests, written before the implementation
+    parseInput.ts                text -> { maxX, maxY, robots: { start, instructionString }[] }, or throw InputError(line, message)
+  cli.ts                         main loop above
+  test/                          Jest tests, written before the implementation
 docs/
-  CHALLENGE.md         (existing)
-  model.md             this model, trimmed down, added later when you say so
-README.md              how to run and test, plus every assumption from section 1
+  CHALLENGE.md
+  modelling-plan.md              this plan
+README.md                        how to run and test, plus every assumption from section 1
 ```
 
 ---
 
 ## 4. Development cycle (based on Shut the Box)
 
-1. **Agree on the model.** You review this plan. `docs/model.md` and the README skeleton come later, when you say so.
+1. **Agree on the model.** Done. The plan is in `docs/modelling-plan.md`.
 2. **Scaffold.** `package.json`, TypeScript and Jest (ts-jest, or Babel as in Shut the Box), with `npm test` and `npm start < sample.txt`. I'll ask before adding any config.
 3. **Test-first, hardest part first**, one commit point per step:
    1. `orientation`: turning and moving forward
    2. `instructions`: L, R and F as position-to-position functions
-   3. `MarsGrid` core rule: moves, gets lost and leaves a scent, skips an instruction because of a scent (including an `F` scent not blocking a test-only `J`)
-   4. `MarsGrid.reportRobots`: the sample as an acceptance test, plus `moveLog` checks
-   5. `parseInput`: the valid sample, an empty instruction line, and every rejection (grid over 50, instruction over 100, over 1000 robots, bad orientation or letter, off-grid start)
-   6. `cli`
+   3. `MarsGrid.processInstruction` on a 1x1 grid: lost and leaving a scent, ignored because of a scent, a turn is `moved`, two scents on one square, an `F` scent not blocking a test-only `J`, throws for a lost robot
+   4. `processInstructionString`: the 1x1 log above, stops after lost, empty string
+   5. `reportRobots`: the 1x1 example and the brief's sample as acceptance tests
+   6. `parseInput`: the valid sample, an empty instruction line, and every rejection (grid over 50, instruction over 100, over 1000 robots, bad orientation or letter, off-grid start)
+   7. `cli`
 4. **README** finished with run steps, assumptions and next steps.
 
 You commit by hand. I'll call out a natural commit point after each step so the history shows the test-first approach the reviewers want to see.
 
 ---
-
 ## 5. Questions for you
 
 - ~~**Q1. Scent direction.**~~ Settled: a scent records location, orientation before the instruction, and the instruction.
 - ~~**Q2. Bad input.**~~ Settled: any bad line rejects the whole input with a line-numbered error.
 - ~~**Q3. Empty instruction line.**~~ Settled: allowed, and the robot reports its start position.
-- ~~**Q4. Where this lives.**~~ Settled: it goes into `docs/model.md` later, not yet.
+- ~~**Q4. Where this lives.**~~ Settled: the plan lives in `docs/modelling-plan.md`.
