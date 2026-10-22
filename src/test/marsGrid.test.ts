@@ -75,3 +75,14 @@ test('honours the grid size: a robot moving past the edge is lost', () => {
 
   assert.equal(grid.reportRobots(), '0 1 W LOST')
 })
+
+test('a lost robot ignores later instructions, even a move that would be valid from its last position', () => {
+  const grid = new MarsGrid({ maxX: 1, maxY: 1 })
+  const robotId = grid.addRobot({ x: 1, y: 1, orientation: 'N' })
+
+  grid.processInstruction(robotId, 'F') // off the top edge: lost at 1 1 N
+  grid.processInstruction(robotId, 'L') // would face W
+  grid.processInstruction(robotId, 'F') // would move to 0 1, which is on the grid
+
+  assert.equal(grid.reportRobots(), '1 1 N LOST')
+})
