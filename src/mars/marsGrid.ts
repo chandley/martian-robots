@@ -19,6 +19,9 @@ interface Robot {
   status: Status
 }
 
+// The instruction letters nextPosition understands.
+export const INSTRUCTIONS = ['L', 'R', 'F']
+
 const LEFT_OF: Record<Orientation, Orientation> = { N: 'W', W: 'S', S: 'E', E: 'N' }
 
 const RIGHT_OF: Record<Orientation, Orientation> = { N: 'E', E: 'S', S: 'W', W: 'N' }
@@ -33,6 +36,7 @@ const FORWARD_STEP: Record<Orientation, { dx: number; dy: number }> = {
 export class MarsGrid {
   private readonly gridSize: GridSize
   private robots: Robot[] = []
+  private scents = new Set<string>()
 
   constructor(gridSize: GridSize) {
     this.gridSize = gridSize
@@ -49,11 +53,16 @@ export class MarsGrid {
     if (robot.status === 'lost') {
       return
     }
+    const scentForProposedMove = this.scentKey(robot.position, instruction)
+    if (this.scents.has(scentForProposedMove)) {
+      return
+    }
     const next = this.nextPosition(robot.position, instruction)
     if (this.isOnGrid(next)) {
       robot.position = next
     } else {
       robot.status = 'lost'
+      this.scents.add(scentForProposedMove)
     }
   }
 
@@ -77,6 +86,11 @@ export class MarsGrid {
       default:
         throw new Error(`Unsupported instruction: ${instruction}`)
     }
+  }
+
+  // A scent records the last position on the grid and the instruction that took a robot off it.
+  private scentKey({ x, y, orientation }: Position, instruction: string): string {
+    return `${x},${y},${orientation},${instruction}`
   }
 
   private isOnGrid({ x, y }: Position): boolean {
