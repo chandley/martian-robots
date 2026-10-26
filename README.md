@@ -17,7 +17,7 @@ npm test                                      # run the node tests
 
 ## Example
 
-The file examples/challenge-example.txt contains the example in the CHALLENGE.md document
+The file examples/sample.txt contains the example in the CHALLENGE.md document
 
 ```
 5 3
@@ -32,7 +32,7 @@ LLFFFLFLFL
 if we run 
 
 ```
-node dist/cli.js examples/challenge-example.txt        
+node dist/cli.js examples/sample.txt        
 ```
 
 we see the expected output
@@ -43,7 +43,10 @@ we see the expected output
 2 3 S
 ```
 
+## Extensions
 
+we could add an optional 'verbose' parameter to the input
+When selected, this could show logging for each move before showing the output.
 
 ## Assumptions
 

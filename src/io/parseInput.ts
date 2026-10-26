@@ -1,5 +1,9 @@
 import { INSTRUCTIONS, type GridSize, type Orientation, type Position } from '../mars/marsGrid.ts'
-import type { RobotOrders } from '../addAndMoveRobots.ts'
+
+export interface RobotOrders {
+  startPosition: Position
+  instructionString: string
+}
 
 export interface MissionInput {
   gridSize: GridSize

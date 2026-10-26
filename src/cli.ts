@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs'
-import { InputError, parseInput } from './io/parseInput.ts'
+import { InputError, parseInput, type RobotOrders } from './io/parseInput.ts'
 import { MarsGrid } from './mars/marsGrid.ts'
-import { addAndMoveRobots } from './addAndMoveRobots.ts'
 
 const inputFile = process.argv[2]
 if (!inputFile) {
@@ -25,6 +24,20 @@ try {
     fail(`${inputFile} line ${error.lineNumber}: ${error.message}`)
   }
   throw error
+}
+
+// Robots are added to the grid and moved in order, one robot at a time.
+function addAndMoveRobots(grid: MarsGrid, robotOrders: RobotOrders[]): void {
+  for (const { startPosition, instructionString } of robotOrders) {
+    const robotId = grid.addRobot(startPosition)
+    processInstructionString(grid, robotId, instructionString)
+  }
+}
+
+function processInstructionString(grid: MarsGrid, robotId: number, instructionString: string): void {
+  for (const instruction of instructionString) {
+    grid.processInstruction(robotId, instruction)
+  }
 }
 
 function fail(message: string): never {
