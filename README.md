@@ -15,6 +15,36 @@ node dist/cli.js examples/sample.txt          # run on an input file
 npm test                                      # run the node tests
 ```
 
+## Example
+
+The file examples/challenge-example.txt contains the example in the CHALLENGE.md document
+
+```
+5 3
+1 1 E
+RFRFRFRF
+3 2 N
+FRRFLLFFRRFLL
+0 3 W
+LLFFFLFLFL
+```
+
+if we run 
+
+```
+node dist/cli.js examples/challenge-example.txt        
+```
+
+we see the expected output
+
+```
+1 1 E
+3 3 N LOST
+2 3 S
+```
+
+
+
 ## Assumptions
 
 The brief leaves some points open. This is how the solution handles them.
