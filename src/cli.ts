@@ -1,15 +1,33 @@
 import { readFileSync } from 'node:fs'
-import { parseInput } from './io/parseInput.ts'
+import { InputError, parseInput } from './io/parseInput.ts'
 import { MarsGrid } from './mars/marsGrid.ts'
 import { addAndMoveRobots } from './addAndMoveRobots.ts'
 
 const inputFile = process.argv[2]
 if (!inputFile) {
-  console.error('Usage: node martian-robots <input-file>')
-  process.exit(1)
+  fail('Usage: node martian-robots <input-file>')
 }
 
-const { gridSize, robotOrders } = parseInput(readFileSync(inputFile, 'utf8'))
-const grid = new MarsGrid(gridSize)
-addAndMoveRobots(grid, robotOrders)
-console.log(grid.reportRobots())
+let text: string
+try {
+  text = readFileSync(inputFile, 'utf8')
+} catch {
+  fail(`Cannot read input file: ${inputFile}`)
+}
+
+try {
+  const { gridSize, robotOrders } = parseInput(text)
+  const grid = new MarsGrid(gridSize)
+  addAndMoveRobots(grid, robotOrders)
+  console.log(grid.reportRobots())
+} catch (error) {
+  if (error instanceof InputError) {
+    fail(`${inputFile} line ${error.lineNumber}: ${error.message}`)
+  }
+  throw error
+}
+
+function fail(message: string): never {
+  console.error(message)
+  process.exit(1)
+}
